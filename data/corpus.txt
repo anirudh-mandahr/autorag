@@ -1,0 +1,13 @@
+AutoRAG is a small retrieval-augmented generation demo corpus about the fictional planet Lyra-7.
+
+Lyra-7 orbits a red dwarf star named Keth every 18 Earth days. The planet is tidally locked: one hemisphere faces eternal daylight while the other remains in permanent night. A narrow twilight band called the Ring supports most life.
+
+The Ring's atmosphere contains high concentrations of xenon and trace amounts of bioluminescent algae. The algae produce a faint green glow at night that farmers use as a natural clock. Lyra-7's surface gravity is 0.92 g, slightly lower than Earth's.
+
+The capital city, Meridian Port, sits on the coast of the Bright Sea. Meridian Port exports kelp-derived polymers used in orbital solar sails. The city's harbor freezes only once every eleven years during a phenomenon locals call the Quiet Tide.
+
+Lyra-7's research station, Outpost Theta, studies fast-radio bursts detected from the Keth system. Dr. Amara Voss leads the station and published a landmark paper in 2144 proving that the bursts correlate with solar flare cycles on Keth.
+
+Transport between settlements relies on mag-rail lines powered by geothermal vents along the Ring. The longest route connects Meridian Port to the Night Markets in 6 hours at an average speed of 320 kilometers per hour.
+
+The Night Markets trade in cryogenic seeds adapted to low-light agriculture. The most valuable crop is shadow wheat, which grows with only 2% of standard photosynthetic light and yields flour prized for nutrient density.

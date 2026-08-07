@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoRAG Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --kept: #22c55e;
+      --discarded: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #152033, var(--bg));
+    }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+    header p { margin: 0; color: var(--muted); }
+    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .chart-wrap { position: relative; height: 280px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:hover td { background: rgba(59, 130, 246, 0.06); }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.kept { background: rgba(34, 197, 94, 0.15); color: var(--kept); }
+    .badge.discarded { background: rgba(239, 68, 68, 0.15); color: var(--discarded); }
+    .query-form { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .query-form input {
+      flex: 1 1 280px;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .query-form button {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .query-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .answer-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+    }
+    .meta { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); }
+    .error { color: var(--discarded); margin-top: 0.75rem; }
+    .empty { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AutoRAG</h1>
+    <p>Research leaderboard and live query against the best pipeline configuration.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Objective over experiments</h2>
+      <div class="chart-wrap">
+        <canvas id="objective-chart"></canvas>
+      </div>
+    </section>
+
+    <section>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard-wrap"><p class="empty">Loading…</p></div>
+    </section>
+
+    <section>
+      <h2>Ask a question</h2>
+      <form class="query-form" id="query-form">
+        <input id="question" type="text" placeholder="Ask something about the corpus…" required />
+        <button type="submit" id="ask-btn">Ask</button>
+      </form>
+      <div id="query-result"></div>
+    </section>
+  </main>
+
+  <script>
+    let chart;
+
+    function bestSoFar(values) {
+      let max = -Infinity;
+      return values.map((v) => {
+        max = Math.max(max, v);
+        return max;
+      });
+    }
+
+    function renderChart(experiments) {
+      const labels = experiments.map((e) => `#${e.id}`);
+      const objectives = experiments.map((e) => e.objective);
+      const ctx = document.getElementById("objective-chart");
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Objective",
+              data: objectives,
+              borderColor: "#60a5fa",
+              backgroundColor: "rgba(96, 165, 250, 0.15)",
+              tension: 0.2,
+              pointRadius: 4,
+            },
+            {
+              label: "Best so far",
+              data: bestSoFar(objectives),
+              borderColor: "#22c55e",
+              borderDash: [6, 4],
+              pointRadius: 0,
+              tension: 0.2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { grid: { color: "rgba(255,255,255,0.06)" } },
+            x: { grid: { display: false } },
+          },
+          plugins: { legend: { labels: { color: "#8b9cb3" } } },
+        },
+      });
+    }
+
+    function renderLeaderboard(rows) {
+      const wrap = document.getElementById("leaderboard-wrap");
+      if (!rows.length) {
+        wrap.innerHTML = '<p class="empty">No experiments yet. Run <code>make research</code> first.</p>';
+        return;
+      }
+
+      const html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>ID</th>
+              <th>Objective</th>
+              <th>Status</th>
+              <th>Cost</th>
+              <th>Chunk</th>
+              <th>Rerank</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>${row.rank}</td>
+                <td>${row.id}</td>
+                <td>${row.objective.toFixed(4)}</td>
+                <td><span class="badge ${row.status}">${row.status}</span></td>
+                <td>$${row.cost_usd.toFixed(4)}</td>
+                <td>${row.config.chunk_size}</td>
+                <td>${row.config.rerank_strategy}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>`;
+      wrap.innerHTML = html;
+    }
+
+    async function loadDashboard() {
+      const [historyRes, leaderboardRes] = await Promise.all([
+        fetch("/experiments"),
+        fetch("/leaderboard"),
+      ]);
+
+      if (!historyRes.ok || !leaderboardRes.ok) {
+        throw new Error("Failed to load experiment data");
+      }
+
+      const history = (await historyRes.json()).experiments;
+      const leaderboard = (await leaderboardRes.json()).leaderboard;
+
+      renderChart(history);
+      renderLeaderboard(leaderboard);
+    }
+
+    document.getElementById("query-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const input = document.getElementById("question");
+      const btn = document.getElementById("ask-btn");
+      const resultEl = document.getElementById("query-result");
+      const question = input.value.trim();
+      if (!question) return;
+
+      btn.disabled = true;
+      resultEl.innerHTML = '<p class="meta">Thinking…</p>';
+
+      try {
+        const res = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          resultEl.innerHTML = `<p class="error">${data.detail || "Query failed"}</p>`;
+          return;
+        }
+
+        const citations = data.source_ids?.length
+          ? data.source_ids.join(", ")
+          : "(none)";
+        resultEl.innerHTML = `
+          <div class="answer-box">${escapeHtml(data.answer)}</div>
+          <p class="meta">
+            Refused: ${data.refused} · Top similarity: ${Number(data.top_similarity).toFixed(4)}
+            · Citations: ${escapeHtml(citations)}
+          </p>`;
+      } catch (err) {
+        resultEl.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    loadDashboard().catch((err) => {
+      document.getElementById("leaderboard-wrap").innerHTML =
+        `<p class="error">${escapeHtml(err.message)}</p>`;
+    });
+  </script>
+</body>
+</html>

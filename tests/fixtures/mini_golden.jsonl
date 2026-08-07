@@ -1,0 +1,2 @@
+{"question": "How long is Alpha station's orbital period?", "expected_answer": "18 Earth days", "expected_source_ids": ["corpus-chunk-0"], "answerable": true}
+{"question": "What is the vault access code?", "expected_answer": "", "expected_source_ids": [], "answerable": false}
