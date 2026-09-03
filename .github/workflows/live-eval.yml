@@ -1,0 +1,56 @@
+name: Live eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      split:
+        description: "Eval split (test, adversarial, or held-out)"
+        required: true
+        default: held-out
+        type: choice
+        options:
+          - test
+          - adversarial
+          - held-out
+      repeats:
+        description: "Independent harness repeats for run-to-run variance"
+        required: true
+        default: "1"
+        type: string
+
+jobs:
+  eval:
+    name: Hosted-model eval artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-groups --extra faiss
+
+      - name: Run live eval
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          VECTOR_BACKEND: faiss
+        run: |
+          mkdir -p results
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          uv run python -m autorag.eval \
+            --split "${{ inputs.split }}" \
+            --repeats "${{ inputs.repeats }}" \
+            --json "results/eval-${{ inputs.split }}-${STAMP}.json"
+
+      - name: Upload result artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-eval-${{ inputs.split }}
+          path: results/eval-*.json
+          if-no-files-found: error

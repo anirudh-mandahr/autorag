@@ -41,3 +41,9 @@ def test_pipeline_config_accepts_boundary_values() -> None:
     )
     assert cfg.chunk_size == 50
     assert cfg.refusal_threshold == 1.0
+
+
+def test_quality_weights_sum_to_one() -> None:
+    from autorag.config import QUALITY_WEIGHTS
+
+    assert sum(QUALITY_WEIGHTS.values()) == pytest.approx(1.0)

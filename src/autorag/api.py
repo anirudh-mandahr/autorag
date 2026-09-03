@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from autorag import __version__
 from autorag.config import Settings
-from autorag.pipeline import RAGPipeline, QueryResult, load_sample_corpus
+from autorag.pipeline import QueryResult, RAGPipeline, load_sample_corpus
 from autorag.store import DEFAULT_DB_PATH, ExperimentStore
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -93,8 +93,7 @@ def leaderboard() -> dict[str, list[dict[str, Any]]]:
         ranked = sorted(store.history(), key=lambda record: (-record.objective, record.id))
         return {
             "leaderboard": [
-                _summary_with_rank(record, rank=index + 1)
-                for index, record in enumerate(ranked)
+                _summary_with_rank(record, rank=index + 1) for index, record in enumerate(ranked)
             ]
         }
     finally:

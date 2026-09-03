@@ -9,15 +9,11 @@ from typing import Any
 
 import httpx
 
+from autorag.budget import ANSWER_MAX_OUTPUT_TOKENS, token_cost_usd
 from autorag.config import PipelineConfig, Settings
 from autorag.usage import CallMetrics, UsageTracker
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-# USD per 1M tokens (OpenRouter list prices, approximate).
-_MODEL_PRICING: dict[str, tuple[float, float]] = {
-    "meta-llama/llama-3.3-70b-instruct": (0.10, 0.10),
-}
 
 
 class LLMClient:
@@ -32,6 +28,15 @@ class LLMClient:
         self._settings = settings
         self._config = config
         self.usage = usage or UsageTracker()
+        self._last_model_id = settings.llm_model
+
+    @property
+    def model_id(self) -> str:
+        return self._last_model_id
+
+    @property
+    def provider(self) -> str:
+        return self._settings.llm_provider
 
     def chat(
         self,
@@ -39,6 +44,8 @@ class LLMClient:
         *,
         temperature: float = 0.0,
         response_format: dict[str, str] | None = None,
+        operation: str = "chat",
+        max_tokens: int | None = None,
     ) -> str:
         """Send a chat completion request and return assistant text."""
         if not self._settings.openrouter_api_key:
@@ -51,6 +58,8 @@ class LLMClient:
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
 
         headers = {
             "Authorization": f"Bearer {self._settings.openrouter_api_key}",
@@ -67,7 +76,9 @@ class LLMClient:
         usage = body.get("usage", {})
         input_tokens = int(usage.get("prompt_tokens", 0))
         output_tokens = int(usage.get("completion_tokens", 0))
-        cost_usd = self._estimate_cost(input_tokens, output_tokens)
+        resolved_model = str(body.get("model") or self._settings.llm_model)
+        self._last_model_id = resolved_model
+        cost_usd = token_cost_usd(resolved_model, input_tokens, output_tokens)
 
         self.usage.record(
             CallMetrics(
@@ -75,8 +86,8 @@ class LLMClient:
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost_usd=cost_usd,
-                model=self._settings.llm_model,
-                operation="chat",
+                model=resolved_model,
+                operation=operation,
             )
         )
 
@@ -95,15 +106,10 @@ class LLMClient:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
             response_format={"type": "json_object"},
+            operation="answering",
+            max_tokens=ANSWER_MAX_OUTPUT_TOKENS,
         )
         return self._parse_grounded_response(raw)
-
-    def _estimate_cost(self, input_tokens: int, output_tokens: int) -> float:
-        input_rate, output_rate = _MODEL_PRICING.get(
-            self._settings.llm_model,
-            (0.10, 0.10),
-        )
-        return (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000
 
     @staticmethod
     def _parse_grounded_response(raw: str) -> tuple[str, list[str]]:

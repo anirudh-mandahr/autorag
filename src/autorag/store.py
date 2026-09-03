@@ -127,7 +127,9 @@ class ExperimentStore:
         return self._row_to_record(row) if row else None
 
     def total_cost_usd(self) -> float:
-        row = self._conn.execute("SELECT COALESCE(SUM(cost_usd), 0.0) AS total FROM experiments").fetchone()
+        row = self._conn.execute(
+            "SELECT COALESCE(SUM(cost_usd), 0.0) AS total FROM experiments"
+        ).fetchone()
         return float(row["total"]) if row else 0.0
 
     def count(self) -> int:

@@ -24,6 +24,9 @@ faiss = ["faiss-cpu>=1.9.0"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
 ]
 
 [build-system]
@@ -39,3 +42,30 @@ include = ["src/autorag"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+packages = ["autorag"]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.coverage.run]
+source = ["autorag"]
+branch = true
+omit = ["src/autorag/static/*"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+]

@@ -11,19 +11,12 @@ from fastapi.testclient import TestClient
 from autorag.config import PipelineConfig, compute_objective
 from autorag.pipeline import QueryResult
 from autorag.store import ExperimentStore
+from tests.helpers import sample_metrics
 
 
 def _seed_store(db_path: Path) -> ExperimentStore:
     store = ExperimentStore(db_path)
-    metrics = {
-        "answerable_recall": 0.9,
-        "citation_rate": 0.8,
-        "expected_source_hit_rate": 0.7,
-        "groundedness": 0.85,
-        "correct_refusal_rate": 1.0,
-        "avg_cost_per_query": 0.002,
-        "avg_latency": 120.0,
-    }
+    metrics = sample_metrics()
     objective = compute_objective(metrics)
 
     store.insert(

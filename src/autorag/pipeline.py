@@ -14,8 +14,8 @@ from autorag.config import PipelineConfig, Settings
 from autorag.embeddings import EmbeddingClient
 from autorag.llm import LLMClient
 from autorag.prompts import get_prompt_template
-from autorag.vector_store import ScoredChunk, VectorStore
 from autorag.usage import UsageTracker
+from autorag.vector_store import ScoredChunk, VectorStore
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
@@ -143,17 +143,15 @@ class RAGPipeline:
 
     def _generate_answer(self, state: dict[str, Any]) -> dict[str, Any]:
         reranked = self._rerank(state["query_embedding"], state["retrieved"])
-        context = "\n\n".join(
-            f"[{chunk.id}] {chunk.content}" for chunk in reranked
-        )
+        context = "\n\n".join(f"[{chunk.id}] {chunk.content}" for chunk in reranked)
         template = get_prompt_template(self._config.prompt_template_id)
         prompt = template.format(context=context, question=state["question"])
         answer, source_ids = self._llm.grounded_answer(prompt=prompt)
 
         valid_ids = {chunk.id for chunk in reranked}
+        # Only model-emitted citations. Do not auto-cite the top chunk: a
+        # retrieved-but-uncited source must not count as citation success.
         cited = [source_id for source_id in source_ids if source_id in valid_ids]
-        if not cited and reranked:
-            cited = [reranked[0].id]
 
         return {
             "question": state["question"],

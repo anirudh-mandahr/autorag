@@ -9,18 +9,20 @@ import pytest
 
 from autorag.config import PipelineConfig, compute_objective
 from autorag.store import ExperimentStore
+from tests.helpers import sample_metrics
 
 
 def test_compute_objective() -> None:
-    metrics = {
-        "answerable_recall": 1.0,
-        "citation_rate": 1.0,
-        "expected_source_hit_rate": 1.0,
-        "groundedness": 1.0,
-        "correct_refusal_rate": 1.0,
-        "avg_cost_per_query": 0.01,
-        "avg_latency": 100.0,
-    }
+    metrics = sample_metrics(
+        answerable_recall=1.0,
+        retrieval_hit_at_k=1.0,
+        citation_precision=1.0,
+        citation_recall=1.0,
+        groundedness=1.0,
+        answer_correctness=1.0,
+        correct_refusal_rate=1.0,
+        avg_cost_per_query=0.01,
+    )
     assert compute_objective(metrics) == pytest.approx(1.0 - 0.5)
 
 
@@ -28,15 +30,7 @@ def test_experiment_store_roundtrip(tmp_path: Path) -> None:
     db_path = tmp_path / "experiments.db"
     store = ExperimentStore(db_path)
     config = PipelineConfig(chunk_size=512)
-    metrics = {
-        "answerable_recall": 0.9,
-        "citation_rate": 0.8,
-        "expected_source_hit_rate": 0.7,
-        "groundedness": 0.85,
-        "correct_refusal_rate": 1.0,
-        "avg_cost_per_query": 0.002,
-        "avg_latency": 120.0,
-    }
+    metrics = sample_metrics()
     objective = compute_objective(metrics)
 
     baseline = store.insert(

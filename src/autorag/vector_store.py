@@ -156,7 +156,9 @@ class FaissBackend(VectorBackend):
         for chunk in chunks:
             if chunk.embedding is None:
                 raise ValueError(f"Chunk {chunk.id} is missing an embedding")
-            existing = next((idx for idx, item in enumerate(self._chunks) if item.id == chunk.id), None)
+            existing = next(
+                (idx for idx, item in enumerate(self._chunks) if item.id == chunk.id), None
+            )
             if existing is None:
                 self._chunks.append(chunk)
             else:

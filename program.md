@@ -13,12 +13,25 @@ objective = weighted_quality - weighted_cost
 Where:
 
 - **weighted_quality** is a weighted sum of eval metrics (higher is better):
-  - `answerable_recall` × 0.20
-  - `citation_rate` × 0.10
-  - `expected_source_hit_rate` × 0.20
-  - `groundedness` × 0.35
+  - `answerable_recall` × 0.10
+  - `retrieval_hit_at_k` × 0.15
+  - `citation_precision` × 0.10
+  - `citation_recall` × 0.10
+  - `groundedness` × 0.20
+  - `answer_correctness` × 0.20
   - `correct_refusal_rate` × 0.15
 - **weighted_cost** is `avg_cost_per_query` × 50.0 (lower cost is better)
+
+Keep/discard uses the **development split only**. Held-out test and adversarial
+refusal scores are reporting metrics, not selection metrics. A higher dev
+objective is not evidence of a general improvement.
+
+Groundedness and answer correctness are different: a response can be supported
+by retrieved context and still be factually wrong, or factually right and
+unsupported. Do not treat them as one number.
+
+`retrieval_hit_at_k` is not citation success. A retrieved-but-uncited gold
+source is a retrieval hit and a citation miss.
 
 An experiment is **kept** only if its objective beats the current best; otherwise it is **discarded**. Build on kept configs; learn from discarded ones.
 
@@ -56,5 +69,9 @@ All eight fields are required. Use exact enum strings from the search space.
 - If quality is high but cost is high, reduce `retrieval_k` or raise `refusal_threshold` slightly.
 - If refusals are too aggressive (`answerable_recall` low), lower `refusal_threshold`.
 - If citations miss expected sources, try smaller chunks or higher `retrieval_k`.
+- If `answer_correctness` is low while `groundedness` is high, retrieval may be
+  fine and the generator is still wrong — do not celebrate grounded-but-wrong.
+- If `retrieval_hit_at_k` is high but `citation_recall` is low, the right chunk
+  was retrieved and then not cited.
 - `grounded_concise` may reduce tokens; compare against quality drop.
 - `all-mpnet-base-v2` is stronger but slower to embed — weigh retrieval quality vs latency/cost.

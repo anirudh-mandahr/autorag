@@ -1,0 +1,5 @@
+{"question": "Who leads Outpost Theta and what did they discover about fast-radio bursts?", "expected_answer": "Dr. Amara Voss leads Outpost Theta and showed the bursts correlate with solar flare cycles on Keth.", "expected_source_ids": ["corpus-chunk-3"], "answerable": true}
+{"question": "What is Lyra-7's surface gravity compared to Earth?", "expected_answer": "0.92 g, slightly lower than Earth's.", "expected_source_ids": ["corpus-chunk-1"], "answerable": true}
+{"question": "What crop is most valuable at the Night Markets and how much light does it need?", "expected_answer": "Shadow wheat, which grows with only 2% of standard photosynthetic light.", "expected_source_ids": ["corpus-chunk-5"], "answerable": true}
+{"question": "In what year did Dr. Amara Voss publish the landmark paper on fast-radio bursts?", "expected_answer": "2144.", "expected_source_ids": ["corpus-chunk-3"], "answerable": true}
+{"question": "Who won the Nobel Prize in Physics in 2020?", "expected_answer": "", "expected_source_ids": [], "answerable": false}

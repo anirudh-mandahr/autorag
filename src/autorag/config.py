@@ -43,7 +43,12 @@ class PipelineConfig(BaseModel):
 class Settings(BaseSettings):
     """Environment-backed runtime settings (not mutated by the research loop)."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
 
     openrouter_api_key: str = Field(default="", validation_alias="OPENROUTER_API_KEY")
     database_url: str = Field(
@@ -55,8 +60,18 @@ class Settings(BaseSettings):
         default="meta-llama/llama-3.3-70b-instruct",
         validation_alias="LLM_MODEL",
     )
+    llm_provider: str = Field(default="openrouter", validation_alias="LLM_PROVIDER")
     max_experiments: int = Field(default=15, ge=1, validation_alias="MAX_EXPERIMENTS")
-    max_usd_spend: float = Field(default=5.0, ge=0.0, validation_alias="MAX_USD_SPEND")
+    max_usd_spend: float = Field(
+        default=5.0,
+        ge=0.0,
+        validation_alias="MAX_USD_SPEND",
+        description=(
+            "Hard per-session USD cap. The loop reserves conservative max-cost "
+            "estimates before researcher and eval calls and will not start work "
+            "that cannot fit in the remaining budget."
+        ),
+    )
 
 
 def get_search_space() -> dict:
@@ -83,10 +98,12 @@ def get_search_space() -> dict:
 
 
 QUALITY_WEIGHTS: dict[str, float] = {
-    "answerable_recall": 0.20,
-    "citation_rate": 0.10,
-    "expected_source_hit_rate": 0.20,
-    "groundedness": 0.35,
+    "answerable_recall": 0.10,
+    "retrieval_hit_at_k": 0.15,
+    "citation_precision": 0.10,
+    "citation_recall": 0.10,
+    "groundedness": 0.20,
+    "answer_correctness": 0.20,
     "correct_refusal_rate": 0.15,
 }
 

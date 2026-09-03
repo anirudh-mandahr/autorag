@@ -50,6 +50,17 @@ class UsageTracker:
     def total_cost_usd(self) -> float:
         return sum(call.cost_usd for call in self.calls)
 
+    def cost_for(self, *operations: str) -> float:
+        """USD spent on the given operation names."""
+        wanted = set(operations)
+        return sum(call.cost_usd for call in self.calls if call.operation in wanted)
+
+    def cost_by_operation(self) -> dict[str, float]:
+        buckets: dict[str, float] = {}
+        for call in self.calls:
+            buckets[call.operation] = buckets.get(call.operation, 0.0) + call.cost_usd
+        return buckets
+
     def summary(self) -> dict[str, float | int]:
         return {
             "latency_ms": round(self.total_latency_ms, 2),

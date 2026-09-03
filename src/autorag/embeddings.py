@@ -28,8 +28,8 @@ class EmbeddingClient:
     def dimension(self) -> int:
         model = self._get_model()
         if hasattr(model, "get_embedding_dimension"):
-            return int(model.get_embedding_dimension())
-        return int(model.get_sentence_embedding_dimension())
+            return int(model.get_embedding_dimension() or 0)
+        return int(model.get_sentence_embedding_dimension() or 0)
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         if not texts:

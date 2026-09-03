@@ -68,6 +68,9 @@ class StubEmbeddings:
 class StubLLM:
     """Deterministic LLM — no OpenRouter calls."""
 
+    model_id = "stub-llm"
+    provider = "stub"
+
     def __init__(self, usage: UsageTracker | None = None) -> None:
         self.usage = usage or UsageTracker()
         self.chat_calls: list[list[dict[str, str]]] = []
@@ -78,6 +81,8 @@ class StubLLM:
         *,
         temperature: float = 0.0,
         response_format: dict[str, str] | None = None,
+        operation: str = "chat",
+        max_tokens: int | None = None,
     ) -> str:
         self.chat_calls.append(messages)
         self.usage.record(
@@ -86,11 +91,15 @@ class StubLLM:
                 input_tokens=10,
                 output_tokens=5,
                 cost_usd=0.001,
-                operation="chat",
+                operation=operation,
+                model=self.model_id,
             )
         )
         user = messages[-1]["content"]
-        if "supported" in messages[0].get("content", "").lower():
+        system = messages[0].get("content", "").lower() if messages else ""
+        if "correctness" in system or "expected answer" in user.lower():
+            return json.dumps({"label": "correct"})
+        if "supported" in system:
             return json.dumps({"supported": True})
         if "PipelineConfig" in user:
             return json.dumps(PipelineConfig(chunk_size=500).model_dump())
@@ -103,7 +112,8 @@ class StubLLM:
                 input_tokens=20,
                 output_tokens=10,
                 cost_usd=0.002,
-                operation="grounded_answer",
+                operation="answering",
+                model=self.model_id,
             )
         )
         if "orbit" in prompt.lower() or "alpha" in prompt.lower():
