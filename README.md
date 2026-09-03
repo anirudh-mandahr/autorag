@@ -27,15 +27,26 @@ These numbers come from `EvalHarness` on the frozen mini-corpus in `tests/fixtur
 
 n=2 is tiny. Bootstrap intervals over two examples are not a generalization claim. CI re-runs this harness on every push.
 
-### Live hosted-model results
+### Live hosted-model results (default config, single run)
 
-Not published in this README. Hosted inference is not deterministic, even at `temperature=0`. To produce a versioned artifact:
+One held-out run on 2026-09-03 with `VECTOR_BACKEND=faiss`, default `PipelineConfig`, OpenRouter `meta-llama/llama-3.3-70b-instruct`. Artifact: `results/eval-held-out-20260903T203221Z.json`. Hosted inference is not deterministic even at `temperature=0`; these numbers are one draw, not a freeze.
 
-1. Store `OPENROUTER_API_KEY` as a GitHub Actions secret.
-2. Run the **Live eval** workflow (`.github/workflows/live-eval.yml`).
-3. Download `results/eval-<split>-<timestamp>.json`.
+| Metric | Test (n=5) | Adversarial (n=5) |
+|--------|------------|-------------------|
+| Answerable recall | 1.000 | — |
+| Retrieval hit@k | 1.000 | — |
+| Retrieval MRR | 1.000 | — |
+| Retrieval NDCG | 1.000 | — |
+| Citation precision | 1.000 | 0.000 |
+| Citation recall | 1.000 | 0.000 |
+| Claim-citation correctness | 1.000 | 0.000 |
+| Groundedness | 1.000 | 1.000 |
+| Answer correctness | 1.000 | 0.000 |
+| Correct refusal rate | 1.000 | **0.200** [0.00, 0.60] |
+| Avg cost / query | $0.000074 | $0.000059 |
+| Avg latency | 5526 ms | 3282 ms |
 
-That artifact records model id, provider, prompt/corpus/config digests, raw judge output, timestamps, and whether each verdict was cached.
+On this run the baseline looks strong on the frozen test set but refuses only 1/5 adversarial traps — so `correct_refusal_rate` is the clear failure mode. n=5 per split is too small for a general-improvement claim; re-runs can differ. Reproduce with `make eval`, or the **Live eval** workflow (`.github/workflows/live-eval.yml`) which writes a versioned JSON artifact with model id, provider, digests, raw judge output, timestamps, and cache provenance.
 
 ## How it works
 
